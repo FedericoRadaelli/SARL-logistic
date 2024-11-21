@@ -1,0 +1,67 @@
+/** 
+ * 
+ */
+package io.sarl.examples.pingpong
+
+import io.sarl.api.core.Destroy
+import io.sarl.api.core.Initialize
+import io.sarl.api.core.Logging
+import io.sarl.api.core.DefaultContextInteractions
+import io.sarl.api.core.Behaviors
+import io.sarl.api.core.Lifecycle
+
+// L'Agente Order si occupa di fare da tramite per verificare la gestione dei pagamenti e delle spedizioni. Inoltre comunica gli acuisti effettuti a ProductStorage.
+event OrderDone
+event UpdateResources
+event CheckAvelable{
+	val raw : int
+	val qty : int
+	
+	new(raw: int, qty: int){
+		this.raw = raw
+		this.qty = qty
+	}
+}
+event UpdateDB
+
+agent Organization {
+	uses Logging, DefaultContextInteractions, Lifecycle, Behaviors
+
+	var matrix : ConcurrentMatrix
+	var r : int = 0
+	var q : int = 0
+	var price : int = 0
+	var total : int = 0
+	on Initialize {
+		info("Agente Organization inizializato.")
+		this.matrix = MatrixManager.getMatrix();
+
+	}
+
+	on CheckAvelable {													//Una volta ricevuto il prodotto e il quantitativo acuistato l'Agente rimanda un emit per effettuare il pagamento.
+		this.r = occurrence.raw
+		this.q = occurrence.qty
+		price = this.matrix.readCell(occurrence.raw-1, 2)
+		total = price*q
+		emit(new Payment(total))
+		
+	}
+	
+	on OrderDone {														//Alla ricezione del pagamento avvenuto notifca Transport per la spedizione e utilizza UpdateDB per aggiornare ProductStorage.
+		info("Invio informazioni al corriere.")
+		emit(new Package)
+		wake(new UpdateDB)
+	}
+	
+	on UpdateDB {														//Aggiornamento della tabella in ProductStorage.
+		info("Aggiorno il Database.")
+		emit(new BoughtProduct(this.r, this.q))
+		killMe
+	}
+	
+
+	on Destroy {
+		info("Agente Organization terminato.")
+	}
+	
+}

@@ -1,0 +1,34 @@
+package io.sarl.examples.pingpong
+
+import io.sarl.api.core.Initialize
+import io.sarl.api.core.Lifecycle
+import io.sarl.api.core.Logging
+import io.sarl.api.core.Destroy
+import io.sarl.examples.pingpong.ConcurrentMatrix
+import io.sarl.examples.pingpong.MatrixManager
+import java.util.concurrent.TimeUnit
+
+/*Questo Agente si occupa di lanciare tutti gli altri Agenti che devono essere contenuti in  DefaultContext. Inoltre inizializza la matrice. */
+agent BootAgent {
+	uses Lifecycle, Logging
+	var matrix : ConcurrentMatrix
+	
+	on Initialize {
+
+		MatrixManager.initializeMatrix(5, 3);
+		TimeUnit.SECONDS.sleep(1)
+		spawn(Organization)
+		TimeUnit.SECONDS.sleep(1)
+		spawn(Transport)
+		TimeUnit.SECONDS.sleep(1)
+		spawn(ProductStorage)
+		TimeUnit.SECONDS.sleep(1)
+		spawn(Order)
+		killMe
+	}
+
+	on Destroy {
+		
+	}
+	
+}

@@ -1,0 +1,51 @@
+/** 
+ * 
+ */
+package io.sarl.examples.pingpong
+
+import io.sarl.api.core.Destroy
+import io.sarl.api.core.Initialize
+import io.sarl.api.core.Logging
+import io.sarl.api.core.Lifecycle
+import java.util.Scanner
+
+event BoughtProduct {
+	val raw : int
+	val qty : int
+	
+	new(raw: int, qty: int){
+		this.raw = raw
+		this.qty = qty
+	}
+}
+
+/** 
+ L'agente ProductStorage si occupa di gestire una tabella contenete le quantitá di oggetti e i loro tipi.
+ */
+agent ProductStorage {
+	uses Logging, Lifecycle
+
+	var matrix : ConcurrentMatrix
+	var scanner = new Scanner(System.in)
+	
+	on Initialize {																					//Importazione della matrice e visualizzazione a riga di comando.
+		info("Agente ProductStorage Inizializato.")
+		this.matrix = MatrixManager.getMatrix();
+		this.matrix.printMatrix()
+		}
+	
+	
+	on BoughtProduct {																				//Decremento della quantitá dei prodotti acqusitati.
+		var Ptype = occurrence.raw
+		var Pnumber = occurrence.qty
+
+		this.matrix.writeCell(Ptype - 1, 1, (this.matrix.readCell(Ptype - 1, 1) - Pnumber))
+		this.matrix.printMatrix()
+		info("Database aggiornato!")
+		killMe
+	}
+	on Destroy {
+		info("Agente ProductStorage terminato.")
+	}
+
+}

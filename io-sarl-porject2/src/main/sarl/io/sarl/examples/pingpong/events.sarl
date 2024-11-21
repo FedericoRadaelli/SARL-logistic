@@ -1,0 +1,6 @@
+
+package io.sarl.examples.pingpong
+
+event Package {
+	
+}

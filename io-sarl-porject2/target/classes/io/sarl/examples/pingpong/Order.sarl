@@ -1,0 +1,88 @@
+/** 
+ * 
+ */
+package io.sarl.examples.pingpong
+
+import io.sarl.api.core.Destroy
+import io.sarl.api.core.Initialize
+import io.sarl.api.core.Logging
+import io.sarl.api.core.DefaultContextInteractions
+import java.util.Scanner
+import io.sarl.api.core.Lifecycle
+import io.sarl.api.core.Behaviors
+
+/*L'Agente Order si occupa di far selezionare al utente i prodotti che vuole oridnare, Fare effettuare il pagamento e aggiornarlo sulla spedizione */
+
+event SelectionP
+event TrackingInfo
+event Payment {
+	val price : int
+
+	new(price : int) {
+		this.price = price
+	}
+}
+
+
+agent Order {
+	uses Logging, Lifecycle, Behaviors, DefaultContextInteractions
+
+	var scanner = new Scanner(System.in)
+	
+	on Initialize {
+		info("Agente Order inizializato.") 							//L'Agente una volta inizializato richiama una sua Azione per chiedere al utente cosa vuole acquistare.
+		wake(new SelectionP)
+	}
+
+	on SelectionP {
+		info("Seleziona il prodotto che vuoi acquistare:\n>") 		//Gestione degli input da tasteira relativi al prodotto e alla quantitá che si desidera acquistare.
+		var raw = scanner.nextInt()
+		info("Inserire la quantitá:\n>")
+		var qty = scanner.nextInt()
+		emit(new CheckAvelable(raw,qty))						//Una volta che i dati sono stati inseriti vengono inviato al Agente Organization.
+	}
+	
+	on Payment {
+		info("Ordine ricevuto, il totale é: \n\n" + occurrence.price + "€." + "\n\nprocedere al pagamento.") // Quando Organization valida il tutto effettua una richiesta di pagamento.
+		info("Inserire il numero di carta:\n>")
+		var Ncar = scanner.nextLong()
+		var lunghezza = String.valueOf(Ncar).length();
+		if (lunghezza != 16) {
+			info("Numero carta errato, riprovare.")
+			wake(new Payment(occurrence.price))
+		} else{
+			info("Inserire il CVV:\n>")
+			var CVV = scanner.nextInt()
+			var lunghezza2 = String.valueOf(CVV).length();
+			if (lunghezza2 != 3) {
+				info("CVV errato, riprovare.")
+				wake(new Payment(occurrence.price))
+			}else{
+				info("Inserisci il mese di scadenza:\n>")
+				var datem = scanner.nextInt()
+				info("Inserisci l'anno di scadenza:\n>")
+				var datea = scanner.nextInt()
+				if (datem > 12 || datem <= 0 || datea < 2024) {
+					info("Data errata, riprovare.")
+					wake(new Payment(occurrence.price))
+				}else{
+				info("Pagamento avvenuto.")
+				emit(new OrderDone)
+				}								//Inseriti correttamente tutti i dati Order Comunica a Organization di far aggiornare il Database in ProductStorage
+				
+			}
+		}
+		
+	}
+	
+	on TrackingInfo{
+		
+		info ("Il tuo pacco é stato conseganto.")				//Transport conferma la consegna del pacchetto
+		killMe													//L'agente si termina
+		
+	}
+	on Destroy {
+		info("Agente Order terminato.")
+	}
+
+}

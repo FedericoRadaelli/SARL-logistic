@@ -1,0 +1,44 @@
+/** 
+ * 
+ */
+package io.sarl.examples.pingpong
+
+
+import io.sarl.api.core.Destroy
+import io.sarl.api.core.Initialize
+import io.sarl.api.core.Logging
+import io.sarl.api.core.DefaultContextInteractions
+import java.util.Random
+import java.util.concurrent.TimeUnit
+import io.sarl.api.core.Lifecycle
+
+/*
+ L'Agente Transport simula i tempi di ritiro e consegna del pacco
+ */
+agent Transport {
+	uses Logging
+	uses DefaultContextInteractions
+	uses Lifecycle
+
+	on Initialize {
+		info("Agente Transport inizializato.")
+	}
+
+	on Package {
+		info("Informazioni ordine ricevute, ritiro in corso.")		//funzione che simula un tempo di recupero del pacco
+		var ran2 : Random ran2 = new Random();
+		var b = ran2.nextInt(15);
+		TimeUnit.SECONDS.sleep(b)
+		
+		info("Pacchetto ritirato e in arrivo.") 						// funzione che pdopo un periodo di tempo randomico emette al agente Order un emit di consegna effettuata
+		var ran : Random ran = new Random();
+		var a = ran.nextInt(15);
+		TimeUnit.SECONDS.sleep(a)
+		emit(new TrackingInfo)
+		killMe
+	}
+
+	on Destroy {
+		info("Agente Transport terminato.")
+	}
+}
